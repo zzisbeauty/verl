@@ -1,0 +1,34 @@
+services:  
+  verl:  
+    build:  
+      context: .  
+      dockerfile: Dockerfile.my
+    container_name: verl-container  
+    restart: "no"  
+    runtime: nvidia  
+    environment:  
+      - NVIDIA_VISIBLE_DEVICES=all  
+      - PYTHONUNBUFFERED=1  
+      - TRANSFORMERS_CACHE=/root/.cache/huggingface  
+      - HF_HOME=/root/.cache/huggingface  
+      - MODELSCOPE_CACHE=/root/.cache/modelscope  
+      - CUDA_VISIBLE_DEVICES=0  
+    volumes:  
+      # 项目代码映射  
+      - /home/nvidia/Desktop/verl:/workspace/verl  
+      # 模型数据映射  
+      - /home/nvidia/Desktop/localmodels:/workspace/models  
+      - /home/nvidia/Desktop/localdatasets:/workspace/datasets  
+      # 缓存目录映射  
+      - /home/nvidia/Desktop/cachedatas/verl:/workspace/cache  
+      # HuggingFace 缓存映射  
+      - ~/.cache/huggingface:/root/.cache/huggingface  
+      # ModelScope 缓存映射  
+      - ~/.cache/modelscope:/root/.cache/modelscope  
+      # 共享内存  
+      - /dev/shm:/dev/shm  
+    working_dir: /workspace/verl  
+    shm_size: "16g"  # 减少共享内存  
+    stdin_open: true  
+    tty: true  
+    command: /bin/bash

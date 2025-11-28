@@ -1,0 +1,30 @@
+{  
+    "version": "0.2.0",  
+    "configurations": [  
+        {  
+            "name": "Debug PPO Training",  
+            "type": "python",  
+            "request": "launch",  
+            "program": "${workspaceFolder}/verl/trainer/main_ppo.py",  
+            "args": [  
+                "--config-path", "${workspaceFolder}",  
+                "--config-name", "debug_ppo_config"  
+            ],  
+            "console": "integratedTerminal",  
+            "cwd": "${workspaceFolder}",  
+            "env": {  
+                "PYTHONUNBUFFERED": "1",  
+                "HYDRA_FULL_ERROR": "1"  
+            },  
+            "justMyCode": false,  
+            "stopOnEntry": false,  
+            "postDebugTask": "Disable Ray Debug"  
+        },  
+        {  
+            "name": "Disable Ray Debug",  
+            "type": "shell",  
+            "command": "ray stop",  
+            "problemMatcher": []  
+        }  
+    ]  
+}

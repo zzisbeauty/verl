@@ -1,0 +1,93 @@
+# Debug配置文件 - 单机单卡PPO训练  
+defaults:  
+  - actor@actor_rollout_ref.actor: dp_actor  
+  - data@data: legacy_data  
+  - ref@actor_rollout_ref.ref: dp_ref  
+  - rollout@actor_rollout_ref.rollout: rollout  
+  - model@actor_rollout_ref.model: hf_model  
+  - critic@critic: dp_critic  
+  - reward_model@reward_model: dp_reward_model  
+  - algorithm@algorithm.rollout_correction: rollout_correction  
+  - _self_  
+
+# 数据配置  
+data:  
+  train_files: "$HOME/data/gsm8k/train.parquet"  
+  val_files: "$HOME/data/gsm8k/test.parquet"  
+  train_batch_size: 1  # 减小batch size便于debug  
+  max_prompt_length: 512  
+  max_response_length: 512  
+  prompt_key: prompt  
+  response_key: response  
+  filter_overlong_prompts: true  
+  truncation: 'error'  
+  
+# 模型配置  
+actor_rollout_ref:  
+  model:  
+    path: "/workspace/models/qwen2.5-1.5b-instruct"  
+    enable_gradient_checkpointing: true  
+    use_remove_padding: true  
+    
+  # Actor配置  
+  actor:  
+    optim:  
+      lr: 1e-6  
+    ppo_mini_batch_size: 1  
+    ppo_micro_batch_size_per_gpu: 1  # 小batch便于debug  
+    ppo_epochs: 1  
+    use_kl_loss: false  
+    strategy: fsdp  
+    fsdp_config:  
+      param_offload: true  
+      optimizer_offload: true  
+    
+  # Rollout配置  
+  rollout:  
+    name: vllm  
+    tensor_model_parallel_size: 1  # 单卡必须为1  
+    gpu_memory_utilization: 0.4  
+    log_prob_micro_batch_size_per_gpu: 4  
+    n: 1  # 每个prompt生成1个response  
+    
+  # Reference配置  
+  ref:  
+    log_prob_micro_batch_size_per_gpu: 4  
+  
+# Critic配置  
+critic:  
+  optim:  
+    lr: 1e-5  
+  model:  
+    path: "/workspace/models/qwen2.5-1.5b-instruct"  
+    enable_gradient_checkpointing: true  
+    use_remove_padding: true  
+  ppo_micro_batch_size_per_gpu: 2  
+  
+# 算法配置  
+algorithm:  
+  adv_estimator: gae  
+  use_kl_in_reward: true  
+  kl_ctrl:  
+    kl_coef: 0.001  
+  update_iters: 1  
+  
+# 训练器配置  
+trainer:  
+  logger: '["console"]'  
+  project_name: "debug_ppo"  
+  experiment_name: "single_gpu_debug"  
+  n_gpus_per_node: 1  # 单卡  
+  nnodes: 1  # 单机  
+  total_epochs: 2  # 少量epoch用于debug  
+  total_training_steps: 5  # 限制步数  
+  save_freq: -1  # 不保存checkpoint  
+  test_freq: 1  # 每epoch测试  
+  val_before_train: true  
+  critic_warmup: 0  
+  
+# Ray配置  
+ray_kwargs:  
+  ray_init:  
+    num_cpus: 8  
+    num_gpus: 1
